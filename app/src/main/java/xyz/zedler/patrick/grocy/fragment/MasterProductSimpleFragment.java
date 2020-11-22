@@ -62,6 +62,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 import xyz.zedler.patrick.grocy.R;
 import xyz.zedler.patrick.grocy.activity.MainActivity;
@@ -919,7 +920,7 @@ public class MasterProductSimpleFragment extends Fragment {
             editTextName.setText(editProduct.getName());
             // parent product
             Product parentProduct = null;
-            if(editProduct.getParentProductId() != null) {
+            if(NumUtil.isStringInt(editProduct.getParentProductId())) {
                 parentProduct = getProduct(Integer.parseInt(editProduct.getParentProductId()));
             }
             if(parentProduct != null) {
@@ -1041,10 +1042,19 @@ public class MasterProductSimpleFragment extends Fragment {
                             Arrays.asList(createProductObj.getBarcodes().split(",")).get(0)
                     ),
                     response -> {
+                        String language = Locale.getDefault().getLanguage();
+                        String country = Locale.getDefault().getCountry();
+                        String both = language + "_" + country;
                         try {
                             JSONObject jsonObject = new JSONObject(response);
                             JSONObject product = jsonObject.getJSONObject("product");
-                            String name = product.getString("product_name");
+                            String name = product.optString("product_name_" + both);
+                            if(name.isEmpty()) {
+                                name = product.optString("product_name_" + language);
+                            }
+                            if(name.isEmpty()) {
+                                name = product.optString("product_name");
+                            }
                             editTextName.setText(name);
                             if(debug) Log.i(
                                     TAG,
@@ -1072,7 +1082,7 @@ public class MasterProductSimpleFragment extends Fragment {
             }
         }
         editTextDays.setText(createProductObj.getDefaultBestBeforeDays());
-        if(createProductObj.getDefaultLocationId() != null) {
+        if(NumUtil.isStringInt(createProductObj.getDefaultLocationId())) {
             selectLocation(Integer.parseInt(createProductObj.getDefaultLocationId()));
         }
     }
@@ -1387,7 +1397,7 @@ public class MasterProductSimpleFragment extends Fragment {
         textViewLocation.setText(R.string.subtitle_none_selected);
         selectedLocationId = -1;
 
-        if(createProductObj != null && createProductObj.getDefaultLocationId() != null) {
+        if(createProductObj != null && NumUtil.isStringInt(createProductObj.getDefaultLocationId())) {
             selectLocation(Integer.parseInt(createProductObj.getDefaultLocationId()));
         }
 
